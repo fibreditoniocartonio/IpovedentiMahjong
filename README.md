@@ -2,6 +2,8 @@
 
 Una versione accessibile e semplificata del classico Mahjong Solitario, progettata specificamente per persone ipovedenti e per funzionare su hardware datato senza connessione internet.
 
+Demo: https://fibreditoniocartonio.github.io/IpovedentiMahjong/
+
 ## 🎯 Obiettivo del Progetto
 
 Questo software nasce per permettere a una persona anziana con ridotta capacità visiva di giocare comodamente. Le priorità del design sono state:
@@ -15,7 +17,7 @@ Questo software nasce per permettere a una persona anziana con ridotta capacità
 
 *   **Grafica Accessibile:**
     *   Tessere grandi con simboli semplici (Numeri, Lettere, Forme, Numeri Romani).
-    *   Le tessere bloccate sono grigie solide (non trasparenti) per evitare confusione visiva.
+    *   Le tessere bloccate sono distinte in scala di grigi, leggermente oscurate.
     *   Effetto 3D accentuato per distinguere i livelli di altezza.
     *   Selezione evidenziata in giallo fluo ad alto contrasto.
 *   **Controlli Ottimizzati:**
