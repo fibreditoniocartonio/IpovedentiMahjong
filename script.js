@@ -1,5 +1,5 @@
 /**
- * MAHJONG SOLITARIO PER NONNO - Versione 2.1 (Con Aiuti)
+ * MAHJONG SOLITARIO PER NONNO - Versione 2.2 (Con Modale Vittoria)
  */
 
 // --- CONFIGURAZIONE E STATO ---
@@ -19,7 +19,7 @@ var state = {
     panX: 0,
     panY: 0,
     selectedId: null,
-    currentMoves: [] // Memorizza le coppie disponibili
+    currentMoves: [] 
 };
 
 // Generatore Random (LCG)
@@ -212,11 +212,12 @@ function updateGameStatus() {
     // Controlla se abbiamo vinto (tutte rimosse)
     var remaining = 0;
     for(var i=0; i<state.tiles.length; i++) if(state.tiles[i].visible) remaining++;
+    
     if(remaining === 0) {
         hintContainer.innerHTML = '';
+        // Sostituito l'alert con il modale Vittoria
         setTimeout(function() {
-            alert("Complimenti Nonno! Hai vinto!");
-            openNewGameModal();
+            document.getElementById('modal-victory').style.display = 'flex';
         }, 500);
         return;
     }
@@ -224,7 +225,6 @@ function updateGameStatus() {
     // Logica Suggerimento / Sconfitta
     if (state.currentMoves.length === 0) {
         hintContainer.innerHTML = '<div class="status-nomoves">NESSUNA MOSSA</div>';
-        // Mostra modale sconfitta (con piccolo ritardo per non essere bruschi)
         setTimeout(function() {
              document.getElementById('modal-gameover').style.display = 'flex';
         }, 1000);
@@ -233,23 +233,19 @@ function updateGameStatus() {
         hintContainer.innerHTML = '<button class="btn-hint" onclick="showHint()">SUGGERIMENTO</button>';
     } 
     else {
-        hintContainer.innerHTML = ''; // Più di una mossa, niente aiuti
+        hintContainer.innerHTML = ''; 
     }
 }
 
 function showHint() {
     if (state.currentMoves.length !== 1) return;
     
-    var pair = state.currentMoves[0]; // array [id1, id2]
+    var pair = state.currentMoves[0]; 
     var id1 = pair[0];
     var id2 = pair[1];
     
-    // Evidenzia nel DOM
     var domTiles = document.getElementsByClassName('tile');
     for (var i = 0; i < domTiles.length; i++) {
-        // Le tile hanno un attributo o un onclick. 
-        // Poiché non ho settato ID nel DOM, uso un metodo indiretto o salvo ID nel DOM.
-        // Modifichiamo il render per mettere l'ID nel DOM
         if (domTiles[i].getAttribute('data-id') == id1 || domTiles[i].getAttribute('data-id') == id2) {
             domTiles[i].classList.add('hint-highlight');
         }
@@ -283,7 +279,7 @@ function renderBoard() {
         if (!clickable) classes += 'blocked ';
         
         el.className = classes;
-        el.setAttribute('data-id', t.id); // Salva ID per il suggerimento
+        el.setAttribute('data-id', t.id); 
         
         var left = (t.x * (TILE_WIDTH/2)) - (t.z * OFFSET_X);
         var top = (t.y * (TILE_HEIGHT/2)) - (t.z * OFFSET_Y);
@@ -305,7 +301,6 @@ function renderBoard() {
         wrapper.appendChild(el);
     }
 
-    // Dopo il render, aggiorniamo lo stato del gioco (pulsanti, ecc)
     updateGameStatus();
 }
 
@@ -327,7 +322,6 @@ function handleTileClick(id) {
             tile.visible = false; tile.removed = true;
             other.visible = false; other.removed = true;
             state.selectedId = null;
-            // Non chiamiamo checkWin qui, lo fa updateGameStatus dentro renderBoard
         } else {
             state.selectedId = id;
         }
@@ -360,7 +354,7 @@ function centerAndFitBoard() {
     var boardW = maxX - minX;
     var boardH = maxY - minY;
     var winW = window.innerWidth;
-    var winH = window.innerHeight - 80; // Aumentato offset per UI
+    var winH = window.innerHeight - 80; 
     
     var scaleX = winW / (boardW + 100);
     var scaleY = winH / (boardH + 100);
@@ -469,6 +463,11 @@ function startNewGame(seedInput) {
     saveGame();
 }
 
+function retryCurrentGame() {
+    closeGameOverModal();
+    startNewGame(state.seed);
+}
+
 // Modali
 function openNewGameModal() {
     document.getElementById('seed-input').value = Math.floor(Math.random() * 99999) + 1;
@@ -484,13 +483,20 @@ function openNewGameModalFromGameOver() {
     openNewGameModal();
 }
 
+// Modale Vittoria (NUOVO)
+function closeVictoryModal() { document.getElementById('modal-victory').style.display = 'none'; }
+
+function handleVictoryToNewGame() {
+    closeVictoryModal();
+    openNewGameModal();
+}
+
 // INIT
 window.onload = function() {
     if (!loadGame()) {
         startNewGame(Math.floor(Math.random() * 10000));
     } else {
         renderBoard();
-        // Forza un refresh dello stato UI
         updateGameStatus();
     }
 };

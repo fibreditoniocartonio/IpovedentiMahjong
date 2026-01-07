@@ -48,7 +48,21 @@
             </div>
             <div class="modal-buttons">
                 <button class="btn-modal btn-cancel" onclick="closeGameOverModal()">Visualizza Tavola</button>
-                <button class="btn-modal btn-confirm" onclick="openNewGameModalFromGameOver()">Nuova Partita</button>
+                <button class="btn-modal btn-confirm" onclick="retryCurrentGame()">Riprova</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal "Vittoria" (NUOVO) -->
+    <div id="modal-victory">
+        <div class="modal-content">
+            <div class="modal-title" style="color: #009900;">VITTORIA!</div>
+            <div style="font-size: 28px; margin-bottom: 30px; font-weight: bold;">
+                Bravissimo! Hai rimosso tutte le tessere.
+            </div>
+            <div class="modal-buttons">
+                <!-- Unico bottone grande che porta alla nuova partita -->
+                <button class="btn-modal btn-confirm" onclick="handleVictoryToNewGame()">Nuova Partita</button>
             </div>
         </div>
     </div>
