@@ -1,7 +1,3 @@
-/**
- * MAHJONG SOLITARIO PER NONNO - Versione 2.2 (Con Modale Vittoria)
- */
-
 // --- CONFIGURAZIONE E STATO ---
 var TILE_WIDTH = 60;
 var TILE_HEIGHT = 80;
@@ -22,6 +18,38 @@ var state = {
     currentMoves: [] 
 };
 
+// --- GESTORE SINTESI VOCALE (TTS) ---
+var Speaker = {
+    init: function() {
+        // Forza il caricamento delle voci all'avvio
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+        }
+    },
+    speak: function(text) {
+        if (!('speechSynthesis' in window)) return;
+        
+        // Interrompe eventuali frasi precedenti
+        window.speechSynthesis.cancel();
+        
+        var msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'it-IT'; // Imposta lingua italiana
+        msg.rate = 0.9;     // Velocità leggermente ridotta per chiarezza
+        msg.pitch = 1.0;    // Tono normale
+        
+        // Tenta di trovare una voce italiana specifica
+        var voices = window.speechSynthesis.getVoices();
+        for(var i = 0; i < voices.length; i++) {
+            if(voices[i].lang.indexOf('it') !== -1) {
+                msg.voice = voices[i];
+                break;
+            }
+        }
+        
+        window.speechSynthesis.speak(msg);
+    }
+};
+
 // Generatore Random (LCG)
 var Random = {
     _seed: 1,
@@ -30,23 +58,48 @@ var Random = {
     nextFloat: function() { return (this.next() - 1) / 2147483646; }
 };
 
-// --- SIMBOLI (Alto contrasto) ---
+// --- SIMBOLI (Alto contrasto e Testo parlato) ---
+// Aggiunta la proprietà 'spoken' per la lettura vocale
 var SYMBOLS = [
-    { content: "1", class: "type-number" }, { content: "2", class: "type-number" }, { content: "3", class: "type-number" },
-    { content: "4", class: "type-number" }, { content: "5", class: "type-number" }, { content: "6", class: "type-number" },
-    { content: "7", class: "type-number" }, { content: "8", class: "type-number" }, { content: "9", class: "type-number" },
+    { content: "1", spoken: "Uno", class: "type-number" },
+    { content: "2", spoken: "Due", class: "type-number" },
+    { content: "3", spoken: "Tre", class: "type-number" },
+    { content: "4", spoken: "Quattro", class: "type-number" },
+    { content: "5", spoken: "Cinque", class: "type-number" },
+    { content: "6", spoken: "Sei", class: "type-number" },
+    { content: "7", spoken: "Sette", class: "type-number" },
+    { content: "8", spoken: "Otto", class: "type-number" },
+    { content: "9", spoken: "Nove", class: "type-number" },
     
-    { content: "A", class: "type-letter" }, { content: "B", class: "type-letter" }, { content: "C", class: "type-letter" },
-    { content: "D", class: "type-letter" }, { content: "E", class: "type-letter" }, { content: "F", class: "type-letter" },
-    { content: "G", class: "type-letter" }, { content: "H", class: "type-letter" }, { content: "K", class: "type-letter" },
+    { content: "A", spoken: "A", class: "type-letter" },
+    { content: "B", spoken: "B", class: "type-letter" },
+    { content: "C", spoken: "C", class: "type-letter" },
+    { content: "D", spoken: "D", class: "type-letter" },
+    { content: "E", spoken: "E", class: "type-letter" },
+    { content: "F", spoken: "F", class: "type-letter" },
+    { content: "G", spoken: "G", class: "type-letter" },
+    { content: "H", spoken: "H", class: "type-letter" },
+    { content: "K", spoken: "Kappa", class: "type-letter" },
     
-    { content: "●", class: "type-shape" }, { content: "■", class: "type-shape" }, { content: "▲", class: "type-shape" },
-    { content: "★", class: "type-shape" }, { content: "✚", class: "type-shape" }, { content: "◆", class: "type-shape" },
-    { content: "♥", class: "type-shape" }, { content: "♠", class: "type-shape" }, { content: "♣", class: "type-shape" },
+    { content: "●", spoken: "Cerchio", class: "type-shape" }, 
+    { content: "■", spoken: "Quadrato", class: "type-shape" }, 
+    { content: "▲", spoken: "Triangolo", class: "type-shape" },
+    { content: "★", spoken: "Stella", class: "type-shape" }, 
+    { content: "✚", spoken: "Croce", class: "type-shape" }, 
+    { content: "◆", spoken: "Rombo", class: "type-shape" },
+    { content: "♥", spoken: "Cuore", class: "type-shape" }, 
+    { content: "♠", spoken: "Picche", class: "type-shape" }, 
+    { content: "♣", spoken: "Fiori", class: "type-shape" },
     
-    { content: "I", class: "type-roman" }, { content: "II", class: "type-roman" }, { content: "III", class: "type-roman" },
-    { content: "IV", class: "type-roman" }, { content: "V", class: "type-roman" }, { content: "VI", class: "type-roman" },
-    { content: "X", class: "type-roman" }, { content: "O", class: "type-roman" }, { content: "=", class: "type-roman" }
+    { content: "I", spoken: "Uno Romano", class: "type-roman" }, 
+    { content: "II", spoken: "Due Romano", class: "type-roman" },
+    { content: "III", spoken: "Tre Romano", class: "type-roman" },
+    { content: "IV", spoken: "Quattro Romano", class: "type-roman" }, 
+    { content: "V", spoken: "Cinque Romano", class: "type-roman" }, 
+    { content: "VI", spoken: "Sei Romano", class: "type-roman" },
+    { content: "X", spoken: "Dieci Romano", class: "type-roman" }, 
+    { content: "O", spoken: "Zero Verde", class: "type-roman" },
+    { content: "=", spoken: "Simbolo Uguale", class: "type-roman" }
 ];
 
 // --- LOGICA GENERAZIONE ---
@@ -215,7 +268,6 @@ function updateGameStatus() {
     
     if(remaining === 0) {
         hintContainer.innerHTML = '';
-        // Sostituito l'alert con il modale Vittoria
         setTimeout(function() {
             document.getElementById('modal-victory').style.display = 'flex';
         }, 500);
@@ -311,19 +363,26 @@ function handleTileClick(id) {
     for(var i=0; i<state.tiles.length; i++) if(state.tiles[i].id === id) tile = state.tiles[i];
     
     if (state.selectedId === null) {
+        // Prima selezione
         state.selectedId = id;
+        Speaker.speak(SYMBOLS[tile.type].spoken); // Legge il contenuto
     } else if (state.selectedId === id) {
+        // Deselezione
         state.selectedId = null; 
     } else {
+        // Tentativo di accoppiamento
         var other = null;
         for(var j=0; j<state.tiles.length; j++) if(state.tiles[j].id === state.selectedId) other = state.tiles[j];
 
         if (other.type === tile.type) {
+            // Coppia trovata
             tile.visible = false; tile.removed = true;
             other.visible = false; other.removed = true;
             state.selectedId = null;
         } else {
+            // Cambio selezione (selezione della nuova tessera)
             state.selectedId = id;
+            Speaker.speak(SYMBOLS[tile.type].spoken); // Legge il nuovo contenuto
         }
     }
     saveGame();
@@ -483,7 +542,7 @@ function openNewGameModalFromGameOver() {
     openNewGameModal();
 }
 
-// Modale Vittoria (NUOVO)
+// Modale Vittoria
 function closeVictoryModal() { document.getElementById('modal-victory').style.display = 'none'; }
 
 function handleVictoryToNewGame() {
@@ -493,6 +552,9 @@ function handleVictoryToNewGame() {
 
 // INIT
 window.onload = function() {
+    // Inizializza il sistema vocale
+    Speaker.init();
+
     if (!loadGame()) {
         startNewGame(Math.floor(Math.random() * 10000));
     } else {
