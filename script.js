@@ -1,16 +1,15 @@
 /**
- * MAHJONG SOLITARIO PER NONNO - Versione 2.0
+ * MAHJONG SOLITARIO PER NONNO - Versione 2.1 (Con Aiuti)
  */
 
 // --- CONFIGURAZIONE E STATO ---
 var TILE_WIDTH = 60;
 var TILE_HEIGHT = 80;
-// Offset 3D aumentato per visibilità
 var OFFSET_X = 10; 
 var OFFSET_Y = 10; 
 
 // Limiti Zoom
-var MIN_ZOOM = 0.75; // Impedisce che diventi troppo piccolo
+var MIN_ZOOM = 0.75; 
 var MAX_ZOOM = 2.5;
 
 var state = {
@@ -19,7 +18,8 @@ var state = {
     zoom: 1.0,
     panX: 0,
     panY: 0,
-    selectedId: null
+    selectedId: null,
+    currentMoves: [] // Memorizza le coppie disponibili
 };
 
 // Generatore Random (LCG)
@@ -181,16 +181,90 @@ function generateSolvableBoard() {
     return finalTiles;
 }
 
+// --- LOGICA SUGGERIMENTI E STATO ---
+
+function calculateAvailableMoves() {
+    var freeTiles = [];
+    // 1. Trova tutte le tessere libere
+    for (var i = 0; i < state.tiles.length; i++) {
+        var t = state.tiles[i];
+        if (t.visible && isFree(t, state.tiles, true)) {
+            freeTiles.push(t);
+        }
+    }
+
+    var moves = [];
+    // 2. Trova le coppie
+    for (var i = 0; i < freeTiles.length; i++) {
+        for (var j = i + 1; j < freeTiles.length; j++) {
+            if (freeTiles[i].type === freeTiles[j].type) {
+                moves.push([freeTiles[i].id, freeTiles[j].id]);
+            }
+        }
+    }
+    return moves;
+}
+
+function updateGameStatus() {
+    state.currentMoves = calculateAvailableMoves();
+    var hintContainer = document.getElementById('hint-container');
+    
+    // Controlla se abbiamo vinto (tutte rimosse)
+    var remaining = 0;
+    for(var i=0; i<state.tiles.length; i++) if(state.tiles[i].visible) remaining++;
+    if(remaining === 0) {
+        hintContainer.innerHTML = '';
+        setTimeout(function() {
+            alert("Complimenti Nonno! Hai vinto!");
+            openNewGameModal();
+        }, 500);
+        return;
+    }
+
+    // Logica Suggerimento / Sconfitta
+    if (state.currentMoves.length === 0) {
+        hintContainer.innerHTML = '<div class="status-nomoves">NESSUNA MOSSA</div>';
+        // Mostra modale sconfitta (con piccolo ritardo per non essere bruschi)
+        setTimeout(function() {
+             document.getElementById('modal-gameover').style.display = 'flex';
+        }, 1000);
+    } 
+    else if (state.currentMoves.length === 1) {
+        hintContainer.innerHTML = '<button class="btn-hint" onclick="showHint()">SUGGERIMENTO</button>';
+    } 
+    else {
+        hintContainer.innerHTML = ''; // Più di una mossa, niente aiuti
+    }
+}
+
+function showHint() {
+    if (state.currentMoves.length !== 1) return;
+    
+    var pair = state.currentMoves[0]; // array [id1, id2]
+    var id1 = pair[0];
+    var id2 = pair[1];
+    
+    // Evidenzia nel DOM
+    var domTiles = document.getElementsByClassName('tile');
+    for (var i = 0; i < domTiles.length; i++) {
+        // Le tile hanno un attributo o un onclick. 
+        // Poiché non ho settato ID nel DOM, uso un metodo indiretto o salvo ID nel DOM.
+        // Modifichiamo il render per mettere l'ID nel DOM
+        if (domTiles[i].getAttribute('data-id') == id1 || domTiles[i].getAttribute('data-id') == id2) {
+            domTiles[i].classList.add('hint-highlight');
+        }
+    }
+}
+
+
 // --- RENDER ---
 
 function renderBoard() {
     var wrapper = document.getElementById('board-wrapper');
     wrapper.innerHTML = '';
     
-    // Posizionamento wrapper (pan e zoom)
     wrapper.style.transform = 'translate(' + state.panX + 'px, ' + state.panY + 'px) scale(' + state.zoom + ')';
 
-    // Ordina per rendering (z -> y -> x)
     var renderList = state.tiles.slice().sort(function(a, b) {
         if (a.z !== b.z) return a.z - b.z;
         if (a.y !== b.y) return a.y - b.y;
@@ -209,8 +283,8 @@ function renderBoard() {
         if (!clickable) classes += 'blocked ';
         
         el.className = classes;
+        el.setAttribute('data-id', t.id); // Salva ID per il suggerimento
         
-        // Calcolo posizione con offset 3D accentuato
         var left = (t.x * (TILE_WIDTH/2)) - (t.z * OFFSET_X);
         var top = (t.y * (TILE_HEIGHT/2)) - (t.z * OFFSET_Y);
         
@@ -230,6 +304,9 @@ function renderBoard() {
 
         wrapper.appendChild(el);
     }
+
+    // Dopo il render, aggiorniamo lo stato del gioco (pulsanti, ecc)
+    updateGameStatus();
 }
 
 // --- LOGICA INTERAZIONE ---
@@ -250,24 +327,13 @@ function handleTileClick(id) {
             tile.visible = false; tile.removed = true;
             other.visible = false; other.removed = true;
             state.selectedId = null;
-            checkWin();
+            // Non chiamiamo checkWin qui, lo fa updateGameStatus dentro renderBoard
         } else {
             state.selectedId = id;
         }
     }
     saveGame();
     renderBoard();
-}
-
-function checkWin() {
-    var remaining = 0;
-    for(var i=0; i<state.tiles.length; i++) if(state.tiles[i].visible) remaining++;
-    if(remaining === 0) {
-        setTimeout(function() {
-            alert("Complimenti Nonno! Hai vinto!");
-            openNewGameModal();
-        }, 500);
-    }
 }
 
 // --- GESTIONE VISTA (ZOOM & PAN) ---
@@ -294,14 +360,14 @@ function centerAndFitBoard() {
     var boardW = maxX - minX;
     var boardH = maxY - minY;
     var winW = window.innerWidth;
-    var winH = window.innerHeight - 60; 
+    var winH = window.innerHeight - 80; // Aumentato offset per UI
     
     var scaleX = winW / (boardW + 100);
     var scaleY = winH / (boardH + 100);
     var newZoom = (scaleX < scaleY) ? scaleX : scaleY;
     
     if(newZoom > 1.5) newZoom = 1.5;
-    if(newZoom < MIN_ZOOM) newZoom = MIN_ZOOM; // Usa il nuovo limite
+    if(newZoom < MIN_ZOOM) newZoom = MIN_ZOOM;
 
     state.zoom = newZoom;
     
@@ -328,12 +394,9 @@ window.addEventListener('mousemove', function(e) {
         var dx = e.clientX - lastX;
         var dy = e.clientY - lastY;
         
-        // FIX PANNING: Rimosso la divisione per zoom. 
-        // Ora il movimento del mouse corrisponde esattamente al movimento della tavola su schermo.
         var newPanX = state.panX + dx;
         var newPanY = state.panY + dy;
         
-        // Limiti
         var limit = 1500;
         if (newPanX > limit) newPanX = limit;
         if (newPanX < -limit) newPanX = -limit;
@@ -364,7 +427,7 @@ container.addEventListener('wheel', function(e) {
         if (state.zoom > MAX_ZOOM) state.zoom = MAX_ZOOM;
     } else {
         state.zoom -= scaleAmount;
-        if (state.zoom < MIN_ZOOM) state.zoom = MIN_ZOOM; // Usa costante MIN_ZOOM (0.75)
+        if (state.zoom < MIN_ZOOM) state.zoom = MIN_ZOOM;
     }
     
     var wrapper = document.getElementById('board-wrapper');
@@ -406,6 +469,7 @@ function startNewGame(seedInput) {
     saveGame();
 }
 
+// Modali
 function openNewGameModal() {
     document.getElementById('seed-input').value = Math.floor(Math.random() * 99999) + 1;
     document.getElementById('modal-overlay').style.display = 'flex';
@@ -413,11 +477,20 @@ function openNewGameModal() {
 function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 function startNewGameFromModal() { startNewGame(document.getElementById('seed-input').value); closeModal(); }
 
+// Modale Sconfitta
+function closeGameOverModal() { document.getElementById('modal-gameover').style.display = 'none'; }
+function openNewGameModalFromGameOver() {
+    closeGameOverModal();
+    openNewGameModal();
+}
+
 // INIT
 window.onload = function() {
     if (!loadGame()) {
         startNewGame(Math.floor(Math.random() * 10000));
     } else {
         renderBoard();
+        // Forza un refresh dello stato UI
+        updateGameStatus();
     }
 };
