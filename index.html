@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Mahjong Solitario per Nonno</title>
+    <!-- Collegamento al file CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- UI Layer -->
+    <div id="ui-bar">
+        <button class="btn-main" onclick="openNewGameModal()">NUOVA PARTITA</button>
+        <div id="seed-display">Seed: <span id="current-seed">---</span></div>
+    </div>
+
+    <!-- Game Layer -->
+    <div id="game-container">
+        <div id="board-wrapper">
+            <!-- Le tessere verranno inserite qui via JS -->
+        </div>
+    </div>
+
+    <!-- Modal Layer -->
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">Iniziare una nuova partita?</div>
+            <div style="font-size: 20px; margin-bottom: 10px;">Codice partita (Seed):</div>
+            <input type="number" id="seed-input" class="modal-input" />
+            <div class="modal-buttons">
+                <button class="btn-modal btn-cancel" onclick="closeModal()">Annulla</button>
+                <button class="btn-modal btn-confirm" onclick="startNewGameFromModal()">INIZIA</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collegamento al file JS -->
+    <script src="script.js"></script>
+</body>
+</html>
