@@ -1,6 +1,6 @@
-# 🀄 Mahjong Solitario "Per Nonno"
+# 🀄 Mahjong Solitario per ipovedenti
 
-Una versione accessibile e semplificata del classico Mahjong Solitario, progettata specificamente per persone ipovedenti (es. maculopatia) e per funzionare su hardware datato senza connessione internet.
+Una versione accessibile e semplificata del classico Mahjong Solitario, progettata specificamente per persone ipovedenti e per funzionare su hardware datato senza connessione internet.
 
 ## 🎯 Obiettivo del Progetto
 
